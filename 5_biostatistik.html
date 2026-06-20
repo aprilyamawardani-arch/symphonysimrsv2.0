@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Symphony SIMRS v2.0 - Analisis Grafik & Biostatistik</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.8fr 1.2fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 20px rgba(148, 163, 184, 0.03);
+            min-height: 320px;
+        }
+
+        /* Layout Grid Khusus untuk Pie Chart berdampingan dengan Legenda */
+        .pie-flex-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        /* Widget Angka Total Kunjungan */
+        .kpi-card {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.15);
+        }
+
+        .kpi-stack {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .kpi-card.compact {
+            min-height: 120px;
+            padding: 18px 20px;
+        }
+
+        .kpi-card.mean {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
+        }
+
+        .kpi-card.klpcm {
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+            box-shadow: 0 10px 25px rgba(236, 72, 153, 0.15);
+        }
+
+        .kpi-stack {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.kpi-card.compact {
+    min-height: 120px;
+    padding: 18px 20px;
+}
+
+.kpi-card.mean {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
+}
+
+.kpi-card.klpcm {
+    background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+    box-shadow: 0 10px 25px rgba(236, 72, 153, 0.15);
+}
+
+.kpi-card.compact .kpi-value {
+    font-size: 34px;
+}
+
+        .kpi-title {
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .kpi-value {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .kpi-card.compact .kpi-value {
+            font-size: 34px;
+        }
+
+        .kpi-subtext {
+            font-size: 11px;
+            margin-top: 10px;
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        /* Legenda Custom untuk Diagram Lingkar */
+        .custom-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body style="background: transparent;">
+
+    <div class="content-body" style="padding: 30px;">
+        
+        <div class="dashboard-grid">
+            
+            <div class="chart-container">
+                <h4 style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 15px;">
+                    📊 Grafik Kunjungan Berdasarkan Cara Bayar
+                </h4>
+                <div style="width: 100%; height: 220px;">
+                    <canvas id="caraBayarChart"></canvas>
+                </div>
+            </div>
+
+           <div class="kpi-stack">
+    <div class="kpi-card compact">
+        <div class="kpi-title">Total Kunjungan Pasien</div>
+        <div class="kpi-value" id="kpiTotalKunjungan">0</div>
+        <div class="kpi-subtext">Periode Berjalan Tahun 2026</div>
+    </div>
+
+    <div class="kpi-card compact mean">
+        <div class="kpi-title">Mean Usia Pasien</div>
+        <div class="kpi-value" id="kpiMeanUsia">0</div>
+        <div class="kpi-subtext">Rata-rata usia seluruh pasien</div>
+    </div>
+
+    <div class="kpi-card compact klpcm">
+        <div class="kpi-title">Kelengkapan Rekam Medis</div>
+        <div class="kpi-value" id="kpiKLPCM">0%</div>
+        <div class="kpi-subtext" id="kpiKLPCMDetail">KLPCM 0 dari 0 pasien</div>
+    </div>
+</div>
+
+        </div>
+
+        <div class="card">
+            <h3>Proporsi Distribusi Penyakit Organ Visceral Terkini</h3>
+            <p style="font-size: 12px; color: #64748b; margin-top: -15px; margin-bottom: 20px;">
+                Visualisasi data sebaran morbiditas sistem rekam medis berdasarkan klasifikasi standar ICD-10.
+            </p>
+
+            <div class="pie-flex-layout">
+                <div style="width: 200px; height: 200px; position: relative;">
+                    <canvas id="penyakitPieChart"></canvas>
+                </div>
+
+                <div class="custom-legend" id="dynamicLegend">
+                    <!-- Legend will be generated dynamically -->
+                </div>
+            </div>
+
+            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 15px;">
+                <button onclick="keDetailEpidemiologi()" class="btn-action" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">🔍 Analisis Lebih Lengkap (Epidemiologist View)</button>
+                <button onclick="keAudit()" class="btn-next-step">Buka Berkas Manajemen Audit Trail</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. KODINGAN BAR CHART (CARA BAYAR)
+        // ==========================================
+        // Chart instances (will be initialized once)
+        const ctxBar = document.getElementById('caraBayarChart').getContext('2d');
+        const caraBayarChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0, borderRadius: 6, barThickness: 35 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } }
+        });
+
+        const ctxPie = document.getElementById('penyakitPieChart').getContext('2d');
+        const penyakitPieChart = new Chart(ctxPie, {
+            type: 'pie',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: '#ffffff' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) {
+                        const total = context.dataset.data.reduce((a,b)=>a+b,0) || 1;
+                        const value = context.raw; const percentage = ((value/total)*100).toFixed(1);
+                        return ` ${context.label}: ${value} Pasien (${percentage}%)`;
+                    } } } } }
+        });
+
+        function getUsiaPasien(pasien) {
+            if (typeof pasien.usiaAngka === 'number') return pasien.usiaAngka;
+            if (typeof pasien.usia === 'number') return pasien.usia;
+            const usiaText = pasien.usiaText || '';
+            const match = String(usiaText).match(/\d+/);
+            return match ? parseInt(match[0], 10) : null;
+        }
+
+        function hasValue(value) {
+            return value !== undefined && value !== null && String(value).trim() !== '';
+        }
+
+        function isTTVLengkap(ttv) {
+            if (!ttv) return false;
+            return hasValue(ttv.td) &&
+                   hasValue(ttv.nadi) &&
+                   hasValue(ttv.rr) &&
+                   hasValue(ttv.suhu) &&
+                   hasValue(ttv.bb) &&
+                   hasValue(ttv.tb);
+        }
+
+        function isRekamMedisLengkap(pasien) {
+            const fields = [
+                pasien.rm,
+                pasien.nik,
+                pasien.nama,
+                pasien.telp,
+                pasien.usiaText,
+                pasien.jk,
+                pasien.poli,
+                pasien.penjamin,
+                pasien.soapS,
+                pasien.soapO,
+                pasien.diagnosaKlinis || pasien.soapA,
+                pasien.prosedurKlinis || pasien.soapP,
+                pasien.kodePrimer || pasien.kodeICD10,
+                pasien.kodeSekunder,
+                pasien.deskripsiICD
+            ];
+
+            return fields.every(hasValue) && isTTVLengkap(pasien.ttv);
+        }
+
+        function refreshDashboard() {
+            
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const totalPasien = daftar.length;
+            document.getElementById('kpiTotalKunjungan').innerText = totalPasien;
+            
+
+            const usiaValid = daftar
+                .map(getUsiaPasien)
+                .filter(usia => Number.isFinite(usia) && usia >= 0);
+            const meanUsia = usiaValid.length
+                ? (usiaValid.reduce((sum, usia) => sum + usia, 0) / usiaValid.length)
+                : 0;
+            document.getElementById('kpiMeanUsia').innerText = meanUsia ? `${meanUsia.toFixed(1)} Th` : '0 Th';
+
+            const jumlahLengkap = daftar.filter(isRekamMedisLengkap).length;
+            const persenKLPCM = totalPasien ? (jumlahLengkap / totalPasien) * 100 : 0;
+            document.getElementById('kpiKLPCM').innerText = `${persenKLPCM.toFixed(1)}%`;
+            document.getElementById('kpiKLPCMDetail').innerText = `KLPCM ${jumlahLengkap} dari ${totalPasien} pasien`;
+
+            const countByPenjamin = {};
+            const countByICD = {};
+            daftar.forEach(p => {
+                const penjamin = p.penjamin || 'Tidak Terdefinisi';
+                countByPenjamin[penjamin] = (countByPenjamin[penjamin] || 0) + 1;
+                const kode = p.kodeICD10 || 'Belum Dikodekan';
+                countByICD[kode] = (countByICD[kode] || 0) + 1;
+            });
+
+            const barLabels = Object.keys(countByPenjamin);
+            const barData = barLabels.map(k => countByPenjamin[k]);
+            const barColors = barLabels.map((_, idx) => ['#2563eb','#0284c7','#7c3aed','#0ea5e9','#9333ea','#1d4ed8'][idx % 6]);
+            caraBayarChart.data.labels = barLabels.length ? barLabels : ['Tidak Ada Data'];
+            caraBayarChart.data.datasets[0].data = barData.length ? barData : [0];
+            caraBayarChart.data.datasets[0].backgroundColor = barColors.length ? barColors : ['rgba(148,163,184,0.25)'];
+            caraBayarChart.update();
+
+            const pieLabels = Object.keys(countByICD).slice(0, 6);
+            const pieData = pieLabels.map(k => countByICD[k]);
+            const pieColors = pieLabels.map((_, idx) => ['#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#6366f1'][idx % 6]);
+            penyakitPieChart.data.labels = pieLabels.length ? pieLabels : ['Tidak Ada Data'];
+            penyakitPieChart.data.datasets[0].data = pieData.length ? pieData : [1];
+            penyakitPieChart.data.datasets[0].backgroundColor = pieColors.length ? pieColors : ['#e6edf3'];
+            penyakitPieChart.update();
+
+            const legend = document.getElementById('dynamicLegend');
+            if (pieLabels.length === 0) {
+                legend.innerHTML = '<div style="color:#64748b; font-size:13px;">Belum ada data pasien.</div>';
+            } else {
+                legend.innerHTML = pieLabels.map((label, idx) =>
+                    `<div class="legend-item"><span class="legend-color" style="background:${pieColors[idx]};"></span>${label}: ${pieData[idx]} pasien</div>`
+                ).join('');
+            }
+        }
+
+        function getUsiaPasien(pasien) {
+    if (typeof pasien.usiaAngka === 'number') return pasien.usiaAngka;
+    if (typeof pasien.usia === 'number') return pasien.usia;
+    const usiaText = pasien.usiaText || '';
+    const match = String(usiaText).match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+}
+
+function hasValue(value) {
+    return value !== undefined && value !== null && String(value).trim() !== '';
+}
+
+function isTTVLengkap(ttv) {
+    if (!ttv) return false;
+    return hasValue(ttv.td) &&
+           hasValue(ttv.nadi) &&
+           hasValue(ttv.rr) &&
+           hasValue(ttv.suhu) &&
+           hasValue(ttv.bb) &&
+           hasValue(ttv.tb);
+}
+
+function isRekamMedisLengkap(pasien) {
+    const fields = [
+        pasien.rm,
+        pasien.nik,
+        pasien.nama,
+        pasien.telp,
+        pasien.usiaText,
+        pasien.jk,
+        pasien.poli,
+        pasien.penjamin,
+        pasien.soapS,
+        pasien.soapO,
+        pasien.diagnosaKlinis || pasien.soapA,
+        pasien.prosedurKlinis || pasien.soapP,
+        pasien.kodePrimer || pasien.kodeICD10,
+        pasien.kodeSekunder,
+        pasien.deskripsiICD
+    ];
+
+    return fields.every(hasValue) && isTTVLengkap(pasien.ttv);
+}
+        window.onload = function() { refreshDashboard(); };
+        window.addEventListener('storage', function(e){ if (e.key === 'antreanSIMRS') refreshDashboard(); });
+        window.addEventListener('message', function(e){ if (e.data && e.data.action === 'dataUpdated') refreshDashboard(); });
+
+        // Alur Navigasi
+        function keDetailEpidemiologi() {
+            window.location.href = "5_analisis_detail.html";
+        }
+        function keAudit() {
+            window.parent.postMessage({ action: 'navigate', url: '6_audit_trail.html' }, '*');
+            window.location.href = "6_audit_trail.html";
+        }
+    </script>
+</body>
+</html>

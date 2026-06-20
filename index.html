@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symphony SIMRS v2.0 - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Gaya tambahan khusus untuk tata letak logo di halaman login */
+        .login-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px; /* Jarak antara logo dan judul teks */
+        }
+
+        .login-logo {
+            max-width: 120px; /* Batas lebar maksimal logo agar proporsional */
+            height: auto;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="login-body">
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-univ">UNIVERSITAS ESA UNGGUL</div>
+            <div class="app-title">SYMPHONY SIMRS v2.0</div>
+        </div>
+
+    </header>
+
+    <div class="login-container">
+        <div class="login-card">
+            
+            <div class="login-logo-container">
+                <img src="logoesgul.png" alt="Logo Universitas Esa Unggul" class="login-logo">
+            </div>
+
+            <h2>Sign In Petugas</h2>
+            <p>Workstation Otentikasi Manajemen Rekam Medis</p>
+            
+            <div id="errorBox" class="error-message">⚠️ Username atau Password salah!</div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username / NIP</label>
+                    <input type="text" id="loginUser" placeholder="Masukkan username atau NIP" required>
+                </div>
+                <div class="form-group">
+                    <label>Kata Sandi</label>
+                    <input type="password" id="loginPass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">Masuk Sistem</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const userDatabase = 
+        [{ user: "adminrmik", pass: "admin123" },
+         { user: "april", pass: "123" }
+        ];
+        function handleLogin(event) {
+            event.preventDefault();
+            const userInput = document.getElementById('loginUser').value.trim();
+            const passInput = document.getElementById('loginPass').value;
+            const errorBox = document.getElementById('errorBox');
+
+            const akunValid = userDatabase.find(u => u.user === userInput && u.pass === passInput);
+            if (akunValid) {
+                localStorage.setItem("sessionUser", userInput);
+                appendAuditEntry({ user: userInput, action: 'Login ke sistem', system: 'Autentikasi' });
+                window.location.href = "sidebar.html"; 
+            } else {
+                errorBox.style.display = "block";
+                document.getElementById('loginPass').value = "";
+            }
+        }
+
+        function appendAuditEntry(entry) {
+            try {
+                const auditList = JSON.parse(localStorage.getItem('auditTrail')) || [];
+                auditList.push({
+                    timestamp: entry.timestamp || new Date().toISOString(),
+                    user: entry.user || 'unknown',
+                    action: entry.action || '-',
+                    system: entry.system || 'Audit Log'
+                });
+                localStorage.setItem('auditTrail', JSON.stringify(auditList));
+            } catch (e) {
+                console.error('appendAuditEntry error', e);
+            }
+        }
+    </script>
+</body>
+</html>

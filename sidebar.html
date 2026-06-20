@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symphony SIMRS v2.0 - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Mengatur agar iframe memenuhi sisa ruang halaman secara halus */
+        .content-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-brand">🔷 SYMPHONY SIMRS</div>
+        <div class="menu-heading">Home</div>
+        <a href="5_biostatistik.html" target="modulFrame" class="menu-item active" onclick="aktifkanMenu(this)">📊 Dashboard</a>
+        <div class="menu-heading">Alur Pelayanan</div>
+        <a href="2_registrasi.html" target="modulFrame" class="menu-item" onclick="aktifkanMenu(this)">📝 Registrasi Pasien</a>
+        <a href="3_workstation_klinis.html" target="modulFrame" class="menu-item" onclick="aktifkanMenu(this)">🩺 Workstation Klinis</a>
+        <a href="4_koding_icd10.html" target="modulFrame" class="menu-item" onclick="aktifkanMenu(this)">🔢 Koding ICD-10</a>
+        <a href="6_audit_trail.html" target="modulFrame" class="menu-item" onclick="aktifkanMenu(this)">📁 Audit Trail & Log</a>
+        
+        <div style="margin-top: auto; padding: 20px;">
+            <a href="#" onclick="logout(); return false;" class="menu-item" style="color: #ef4444; border: 1px solid #fee2e2; border-radius: 10px; justify-content: center;">🚪 Keluar Sistem</a>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <header>
+        <div class="logo-area">
+            <div class="logo-univ" style="padding: 4px 8px; display: flex; align-items: center; justify-content: center;">
+                <img src="logoesgul.png" alt="Logo UEU" style="height: 28px; width: auto; object-fit: contain;">
+            </div>
+            <div class="app-title">SYMPHONY SIMRS v2.0</div>
+        </div>
+        <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+            Sistem Informasi Manajemen Rumah Sakit Integratif
+        </div>
+        <div><span class="status-badge">● KONEKSI SECURE</span></div>
+    </header>
+
+        <div style="flex: 1; overflow: hidden;">
+            <iframe src="5_biostatistik.html" name="modulFrame" class="content-frame" id="modulFrame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Fitur otomatis untuk membuat menu yang diklik menjadi menyala (aktif)
+        function aktifkanMenu(elemen) {
+            const semuaMenu = document.querySelectorAll('.menu-item');
+            semuaMenu.forEach(menu => menu.classList.remove('active'));
+            elemen.classList.add('active');
+        }
+
+        // Menerima instruksi navigasi otomatis dari dalam iframe (misal tombol "Next Step")
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.action === 'navigate') {
+                const targetUrl = event.data.url;
+                const semuaMenu = document.querySelectorAll('.menu-item');
+                
+                semuaMenu.forEach(menu => {
+                    if(menu.getAttribute('href') === targetUrl) {
+                        aktifkanMenu(menu);
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        function logout() {
+            // Hanya hapus data sesi (akun) — jangan hapus data persistent seperti antrean
+            try {
+                const currentUser = localStorage.getItem('sessionUser');
+                if (currentUser && window.addAuditEntry) {
+                    window.addAuditEntry({ user: currentUser, action: 'Logout dari sistem', system: 'Autentikasi' });
+                }
+                // simpan audit sementara (jika perlu)
+                const audit = localStorage.getItem('auditTrail');
+                // Hapus hanya kunci session/temporary
+                localStorage.removeItem('sessionUser');
+                // Hapus sessionStorage yang bersifat sementara
+                try { sessionStorage.removeItem('indexPasienAktif'); } catch(e) {}
+                try { sessionStorage.removeItem('directAccessPatient'); } catch(e) {}
+                // kembalikan audit jika ada
+                if (audit) localStorage.setItem('auditTrail', audit);
+            } catch(e) {}
+            // Kembalikan ke halaman login
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4COJJ2zCbCq2mu7c3jcEABRC1_VFEq86C3AHbVi86QVxzIcBNl-BnbmxygIlolpPu/exec";
+
+    // Helper: tambahkan entri audit (dipanggil dari iframe via parent.addAuditEntry(obj))
+    window.addAuditEntry = function(entry){
+        try {
+            const raw = localStorage.getItem('auditTrail');
+            const list = raw ? JSON.parse(raw) : [];
+            entry.timestamp = entry.timestamp || new Date().toISOString();
+            list.push(entry);
+            localStorage.setItem('auditTrail', JSON.stringify(list));
+        } catch(e) {
+            console.error('addAuditEntry error', e);
+        }
+
+        try {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    formType: 'audit_trail',
+                    timestamp: entry.timestamp,
+                    user: entry.user || 'unknown',
+                    action: entry.action || '',
+                    system: entry.system || ''
+                })
+            });
+        } catch(e) {
+            console.error('send audit trail to spreadsheet error', e);
+        }
+
+        try {
+            const frame = document.getElementById('modulFrame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({ action: 'dataUpdated' }, '*');
+            }
+        } catch(e) {
+            console.error('notify audit update error', e);
+        }
+    };
+</script>
+</body>
+</html>

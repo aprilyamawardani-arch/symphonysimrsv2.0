@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .section-divider { font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+    </style>
+</head>
+<body style="background: transparent;"> 
+    <div class="content-body" style="padding: 30px;">
+        <div class="card">
+            <h3>Formulir Admisi & Identitas Pasien Baru</h3>
+            <p style="font-size:12px; color:#b91c1c; margin-top:6px;">Field bertanda <span style="color:#ef4444; font-weight:700;">*</span> wajib diisi.</p>
+            <form id="formRegistrasi" onsubmit="savePatientData(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                            <label>Nomor Rekam Medis <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="norm" value="RM-2026-0094" readonly style="background: #f1f5f9; font-weight: bold; color: #0284c7;">
+                    </div>
+                    <div class="form-group">
+                        <label>NIK Pasien (16 Digit Wajib) <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="nik" maxlength="16" placeholder="Masukkan Nomor KTP" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Lengkap Pasien <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="nama" placeholder="Contoh: ANTO" style="text-transform: uppercase;" required>
+                    </div>
+                    <div class="form-group">
+                        <label>No. Telepon Pasien <span style="color:#ef4444;">*</span></label>
+                        <input type="tel" id="telpPasien" placeholder="0812xxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal Lahir <span style="color:#ef4444;">*</span></label>
+                        <input type="date" id="tglLahir" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Kelamin <span style="color:#ef4444;">*</span></label>
+                        <select id="jk" required>
+                            <option value="">-- Pilih Jenis Kelamin --</option>
+                            <option value="Tidak diketahui">Tidak diketahui</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                            <option value="Perempuan">Tidak dapat ditentukan</option>
+                            <option value="Perempuan">Tidak mengisi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btn-calc" style="margin: 15px 0; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    Deteksi Umur Otomatis: <span id="displayUsia" style="font-weight:bold; color:#0284c7;">Silakan pilih tanggal lahir</span>
+                </div>
+
+                <div class="section-divider">Alamat Pasien</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>RT / RW <span style="color:#ef4444;">*</span></label><input type="text" id="almtRT" placeholder="001/002" required></div>
+                    <div class="form-group"><label>Kelurahan <span style="color:#ef4444;">*</span></label><input type="text" id="almtKel" placeholder="Contoh: Kapuk" required></div>
+                    <div class="form-group"><label>Kecamatan <span style="color:#ef4444;">*</span></label><input type="text" id="almtKec" placeholder="Contoh: Cengkareng" required></div>
+                    <div class="form-group"><label>Provinsi <span style="color:#ef4444;">*</span></label><input type="text" id="almtProv" placeholder="Contoh: DKI Jakarta" required></div>
+                    <div class="form-group"><label>Negara <span style="color:#ef4444;">*</span></label><input type="text" id="almtNegara" placeholder="Indonesia" required></div>
+                </div>
+
+                <div class="section-divider">Data Penanggung Jawab (PJ)</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Nama PJ <span style="color:#ef4444;">*</span></label><input type="text" id="pjNama" placeholder="Contoh: Anto" required></div>
+                    <div class="form-group"><label>No. Telp PJ <span style="color:#ef4444;">*</span></label><input type="tel" id="pjTelp" placeholder="0812xxxx" required></div>
+                     <div class="form-group">
+                        <label>Hubungan Keluarga <span style="color:#ef4444;">*</span></label>
+                        <select id="hubungan" required>
+                            <option value="">-- Pilih Hubungan --</option>
+                            <option value="Ayah">Ayah</option>
+                            <option value="Ibu">Ibu</option>
+                            <option value="Suami">Suami</option>
+                            <option value="Istri">Istri</option>
+                            <option value="Anak">Anak</option>
+                            <option value="Sendiri">Sendiri</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;"><label>Alamat Lengkap PJ <span style="color:#ef4444;">*</span></label><input type="text" id="pjAlamat" placeholder="Alamat domisili lengkap" required></div>
+                </div>
+
+                <div class="section-divider">Layanan</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Poliklinik Tujuan <span style="color:#ef4444;">*</span></label>
+                        <select id="poli" required>
+                            <option value="">-- Pilih Poliklinik --</option>
+                            <option value="Infectious Disease">Penyakit Dalam</option>
+                            <option value="Pulmonology">Paru</option>
+                            <option value="Pediatric">Anak</option>
+                            <option value="Neurology">Saraf</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Penjamin / Asuransi <span style="color:#ef4444;">*</span></label>
+                        <select id="penjamin" required>
+                            <option value="JKN / BPJS Kesehatan">JKN / BPJS Kesehatan</option>
+                            <option value="Mandiri / Umum">Mandiri / Umum</option>
+                            <option value="Asuransi Swasta">Asuransi Swasta</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-action" style="margin-top:20px; width: 100%;">Simpan & Daftarkan Antrean</button>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+            <h3>Daftar Antrean Pasien</h3>
+            <p style="font-size:12px; color:#64748b; margin-top:-10px;">Pilih pasien di kolom <strong>Alur Pelayanan</strong> untuk mulai menangani.</p>
+            <table class="queue-table compact-table" style="margin-top:10px; font-size:13px;">
+                <thead>
+                    <tr>
+                        <th>No. RM</th>
+                        <th>NAMA PASIEN</th>
+                        <th>USIA / JK</th>
+                        <th>PENJAMIN</th>
+                        <th>ALUR PELAYANAN</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelAntreanBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function pad(num, size) { return String(num).padStart(size, '0'); }
+
+        function generateRM() {
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const next = daftar.length + 1;
+            const nomor = pad(next, 3);
+            const tahun = new Date().getFullYear();
+            const rm = `RM-${tahun}-${nomor}`;
+            document.getElementById('norm').value = rm;
+        }
+
+        function computeAgeFromDate(dobStr) {
+            if (!dobStr) return null;
+            const dob = new Date(dobStr + 'T00:00:00');
+            const now = new Date();
+            if (isNaN(dob.getTime())) return null;
+            let years = now.getFullYear() - dob.getFullYear();
+            const m = now.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
+            return years;
+        }
+
+        document.getElementById('tglLahir').addEventListener('change', function() {
+            const usia = computeAgeFromDate(this.value);
+            const display = document.getElementById('displayUsia');
+            if (usia === null) { display.innerText = 'Tanggal Tidak Valid'; return; }
+            if (usia < 0) { display.innerText = 'Tanggal Lahir tidak boleh di masa depan'; this.value = ''; return; }
+            display.innerText = usia + ' Tahun';
+        });
+
+        function formatDateTime(d) {
+            const y = d.getFullYear();
+            const m = pad(d.getMonth()+1,2);
+            const day = pad(d.getDate(),2);
+            const hh = pad(d.getHours(),2);
+            const mm = pad(d.getMinutes(),2);
+            return `${y}-${m}-${day} ${hh}:${mm}`;
+        }
+
+    const DRAFT_KEY = 'registrasiDraft';
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4COJJ2zCbCq2mu7c3jcEABRC1_VFEq86C3AHbVi86QVxzIcBNl-BnbmxygIlolpPu/exec";
+
+    function collectFormValues() {
+        return {
+            rm: document.getElementById('norm').value,
+            nik: document.getElementById('nik').value,
+            nama: document.getElementById('nama').value,
+            telp: document.getElementById('telpPasien').value,
+            usiaText: document.getElementById('displayUsia').innerText,
+            jk: document.getElementById('jk').value,
+            alamatPasien: {
+                rt_rw: document.getElementById('almtRT').value,
+                kel: document.getElementById('almtKel').value,
+                kec: document.getElementById('almtKec').value,
+                prov: document.getElementById('almtProv').value,
+                negara: document.getElementById('almtNegara').value
+            },
+            penanggungJawab: {
+                nama: document.getElementById('pjNama').value,
+                telp: document.getElementById('pjTelp').value,
+                alamat: document.getElementById('pjAlamat').value
+            },
+            hubungan: document.getElementById('hubungan').value,
+            poli: document.getElementById('poli').value,
+            penjamin: document.getElementById('penjamin').value
+        };
+    }
+
+    function saveDraft() {
+        try {
+            const draft = collectFormValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        } catch(e) { console.error('saveDraft error', e); }
+    }
+
+    function loadDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return;
+            const d = JSON.parse(raw);
+            if (!d) return;
+            if (d.rm) document.getElementById('norm').value = d.rm;
+            if (d.nik) document.getElementById('nik').value = d.nik;
+            if (d.nama) document.getElementById('nama').value = d.nama;
+            if (d.telp) document.getElementById('telpPasien').value = d.telp;
+            if (d.usiaText) document.getElementById('displayUsia').innerText = d.usiaText;
+            if (d.jk) document.getElementById('jk').value = d.jk;
+            if (d.alamatPasien) {
+                document.getElementById('almtRT').value = d.alamatPasien.rt_rw || '';
+                document.getElementById('almtKel').value = d.alamatPasien.kel || '';
+                document.getElementById('almtKec').value = d.alamatPasien.kec || '';
+                document.getElementById('almtProv').value = d.alamatPasien.prov || '';
+                document.getElementById('almtNegara').value = d.alamatPasien.negara || '';
+            }
+            if (d.penanggungJawab) {
+                document.getElementById('pjNama').value = d.penanggungJawab.nama || '';
+                document.getElementById('pjTelp').value = d.penanggungJawab.telp || '';
+                document.getElementById('pjAlamat').value = d.penanggungJawab.alamat || '';
+            }
+            if (d.hubungan) document.getElementById('hubungan').value = d.hubungan;
+            if (d.poli) document.getElementById('poli').value = d.poli;
+            if (d.penjamin) document.getElementById('penjamin').value = d.penjamin;
+        } catch(e) { console.error('loadDraft error', e); }
+    }
+
+    function attachAutoSave() {
+        const selectors = ['#nik','#nama','#telpPasien','#tglLahir','#jk','#almtRT','#almtKel','#almtKec','#almtProv','#almtNegara','#pjNama','#pjTelp','#pjAlamat','#hubungan','#poli','#penjamin'];
+        selectors.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (!el) return;
+            const ev = (el.tagName === 'SELECT' || el.type === 'date' || el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
+            el.addEventListener(ev, saveDraft);
+        });
+    }
+
+ async function savePatientData(e) {
+    e.preventDefault();
+
+    const data = collectFormValues();
+    data.waktuDaftar = new Date().toLocaleString();
+    data.status = 'Menunggu Pelayanan';
+
+    // 1. Simpan ke LocalStorage
+    const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+    daftar.push(data);
+    localStorage.setItem('antreanSIMRS', JSON.stringify(daftar));
+    localStorage.setItem('currentPatient', JSON.stringify(data));
+
+    // 2. Kirim ke Google Sheets
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        console.log("Data berhasil terkirim ke Spreadsheet");
+    } catch (err) {
+        console.error('Gagal kirim ke Sheet, data tetap tersimpan di LocalStorage:', err);
+    }
+
+    // 3. Log Audit
+    try {
+        const currentUser = localStorage.getItem('sessionUser') || 'unknown';
+        const auditEntry = {
+            user: currentUser,
+            action: `Mendaftarkan pasien baru: ${data.nama} (RM ${data.rm})`,
+            system: 'Registrasi'
+        };
+        if (window.parent && window.parent.addAuditEntry) {
+            window.parent.addAuditEntry(auditEntry);
+        } else {
+            const auditList = JSON.parse(localStorage.getItem('auditTrail')) || [];
+            auditList.push({ timestamp: new Date().toISOString(), ...auditEntry });
+            localStorage.setItem('auditTrail', JSON.stringify(auditList));
+        }
+
+        try { window.parent.postMessage({ action: 'dataUpdated' }, '*'); } catch(e) {}
+    } catch (err) {
+        console.error('audit registrasi error', err);
+    }
+
+    // 4. Bersihkan Form & Refresh
+    try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+    document.getElementById('formRegistrasi').reset();
+    generateRM();
+    renderAntreanTable();
+    alert('Data pasien tersimpan dan akan muncul di modul terkait.');
+}
+
+    function renderAntreanTable() {
+        const tbody = document.getElementById('tabelAntreanBody');
+        tbody.innerHTML = '';
+        const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+        if (daftar.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="no-data">Belum ada antrean pasien hari ini.</td></tr>';
+            return;
+        }
+        daftar.forEach((p, idx) => {
+            const tr = document.createElement('tr');
+            const usiaJk = `${p.usiaText} / ${p.jk}`;
+            let alurHtml = p.status === 'Menunggu Pelayanan' ? `<button class="status-badge status-waiting" onclick="prosesPelayananPasien(${idx})">Menunggu Pelayanan</button>` : `<span class="status-badge status-complete">Selesai</span>`;
+            tr.innerHTML = `<td>${p.rm}</td><td>${p.nama}</td><td>${usiaJk}</td><td>${p.penjamin}</td><td>${alurHtml}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function prosesPelayananPasien(index) {
+        sessionStorage.setItem('indexPasienAktif', index);
+        sessionStorage.setItem('directAccessPatient', 'pasienAntreanDinamis');
+
+        try {
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const pasien = daftar[index];
+            const currentUser = localStorage.getItem('sessionUser') || 'unknown';
+            const auditEntry = {
+                user: currentUser,
+                action: pasien ? `Memindahkan pasien ke Workstation Klinis: ${pasien.nama} (RM ${pasien.rm})` : 'Memindahkan pasien ke Workstation Klinis',
+                system: 'Registrasi'
+            };
+            if (window.parent && window.parent.addAuditEntry) {
+                window.parent.addAuditEntry(auditEntry);
+            } else {
+                const auditList = JSON.parse(localStorage.getItem('auditTrail')) || [];
+                auditList.push({ timestamp: new Date().toISOString(), ...auditEntry });
+                localStorage.setItem('auditTrail', JSON.stringify(auditList));
+            }
+            try { window.parent.postMessage({ action: 'dataUpdated' }, '*'); } catch(e) {}
+        } catch (err) {
+            console.error('audit prosesPelayananPasien error', err);
+        }
+
+        window.location.href = '3_workstation_klinis.html';
+    }
+
+    window.onload = function() { loadDraft(); attachAutoSave(); generateRM(); renderAntreanTable(); };
+    </script>
+</body>
+</html>

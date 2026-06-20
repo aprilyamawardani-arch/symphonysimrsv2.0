@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Symphony SIMRS v2.0 - Epidemiological Detailed Analysis</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .epi-badge-danger {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .epi-badge-warning {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fef3c7;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .filter-panel {
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body style="background: transparent;">
+
+    <div class="content-body" style="padding: 30px;">
+        
+        <button onclick="kembali()" class="btn-action" style="background: #64748b; margin-bottom: 20px; padding: 8px 16px;">⬅️ Kembali ke Ringkasan Grafik</button>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="border-left: 4px solid #0f172a; margin-bottom: 0;">📋 Registri Linier Surveilans Epidemiologi Pasien (Sistem Visceral)</h3>
+                <span class="status-badge" style="background: #e0f2fe; color: #0369a1;">MODE: EPIDEMIOLOGIST VIEW</span>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                Data ini digunakan untuk melacak sebaran penyakit endemis, deteksi dini Kejadian Luar Biasa (KLB), pemetaan klaster geografis, dan pola demografi pasien berdasarkan PMK No. 24 Tahun 2022.
+            </p>
+
+            <div class="filter-panel">
+                <span style="font-size: 12px; font-weight: 600; color: #475569;">📍 Filter Wilayah / Klaster:</span>
+                <select style="padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <option value="Semua">-- Semua Kecamatan --</option>
+                    <option value="Kebon Jeruk">Kebon Jeruk</option>
+                    <option value="Kembangan">Kembangan</option>
+                    <option value="Palmerah">Palmerah</option>
+                </select>
+                <span style="font-size: 12px; font-weight: 600; color: #475569;">🦠 Kode ICD-10:</span>
+                <select style="padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <option value="Semua">-- Semua Penyakit --</option>
+                    <option value="K29.7">K29.7 (Gastritis)</option>
+                    <option value="I21.9">I21.9 (Infark Miokard)</option>
+                </select>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. RM</th>
+                            <th>Inisial / Nama</th>
+                            <th>Umur/JK</th>
+                            <th>Diagnosis Klinis RME</th>
+                            <th>Kode ICD-10</th>
+                            <th>Lokasi / Domisili (Kecamatan)</th>
+                            <th>Cara Bayar</th>
+                            <th>Status Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="epidemiologyTableBody">
+                        <tr>
+                            <td>RM-2026-0001</td>
+                            <td>TN. SUTARNO</td>
+                            <td>45 Th / L</td>
+                            <td>Susp. Acute Gastritis Organ Visceral Lambung</td>
+                            <td><span class="badge-s">K29.7</span></td>
+                            <td>📍 Kebon Jeruk, Jakarta Barat</td>
+                            <td>BPJS Kesehatan</td>
+                            <td><span class="epi-badge-warning">Rawat Jalan</span></td>
+                        </tr>
+                        <tr>
+                            <td>RM-2026-0002</td>
+                            <td>NY. AMINAH</td>
+                            <td>52 Th / P</td>
+                            <td>Acute Myocardial Infarction Subendokardial (Jantung)</td>
+                            <td><span class="badge-h">I21.9</span></td>
+                            <td>📍 Palmerah, Jakarta Barat</td>
+                            <td>Asuransi Swasta</td>
+                            <td><span class="epi-badge-danger">ICU / Rawat Inap</span></td>
+                        </tr>
+                        <tr>
+                            <td>RM-2026-0003</td>
+                            <td>TN. BUDI UTOMO</td>
+                            <td>39 Th / L</td>
+                            <td>Gastritis Refluks Kronis (Gastroenterologi)</td>
+                            <td><span class="badge-s">K29.7</span></td>
+                            <td>📍 Kembangan, Jakarta Barat</td>
+                            <td>Umum / Mandiri</td>
+                            <td><span class="epi-badge-warning">Rawat Jalan</span></td>
+                        </tr>
+                        <tr>
+                            <td>RM-2026-0004</td>
+                            <td>NY. RATNA SARI</td>
+                            <td>61 Th / P</td>
+                            <td>ST-Elevation Myocardial Infarction (STEMI) Anteroseptal</td>
+                            <td><span class="badge-h">I21.9</span></td>
+                            <td>📍 Kebon Jeruk, Jakarta Barat</td>
+                            <td>BPJS Kesehatan</td>
+                            <td><span class="epi-badge-danger">ICU / Rawat Inap</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            renderAnalysisTable();
+        }
+
+        function renderAnalysisTable() {
+            const tbody = document.getElementById('epidemiologyTableBody');
+            tbody.innerHTML = '';
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            if (daftar.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="8" class="no-data">Belum ada data pasien untuk analisis epidemiologi.</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            daftar.slice().reverse().forEach(p => {
+                const statusLabel = p.statusKoding === 'Selesai' ? '<span class="badge-h">Selesai Koding</span>' : '<span class="epi-badge-warning">Belum Koding</span>';
+                const kodeCell = p.kodeICD10 ? `<span class="badge-s">${p.kodeICD10}</span>` : '<span class="badge-h">Belum Dikodekan</span>';
+                const lokasi = p.alamatPasien && p.alamatPasien.kec ? `📍 ${p.alamatPasien.kec}, ${p.alamatPasien.prov || ''}` : '-';
+                const umurJK = `${p.usiaText || '-'} / ${p.jk || '-'}`;
+                const diagnosis = p.diagnosaKlinis || '-';
+                const payment = p.penjamin || '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.rm}</td><td>${p.nama}</td><td>${umurJK}</td><td>${diagnosis}</td><td>${kodeCell}</td><td>${lokasi}</td><td>${payment}</td><td>${statusLabel}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function kembali() {
+            window.location.href = "5_biostatistik.html";
+        }
+    </script>
+</body>
+</html>

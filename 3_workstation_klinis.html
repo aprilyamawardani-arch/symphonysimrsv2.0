@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Symphony SIMRS v2.0 - Workstation Klinis</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS Tambahan khusus area Tekanan Darah terpisah */
+        .bp-split-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+        .bp-split-container input {
+            width: 60px !important;
+            text-align: center;
+            padding: 6px 4px !important;
+        }
+        .bp-separator {
+            font-size: 16px;
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        /* CSS KHUSUS FITUR KEAMANAN / BLUR FORMULIR */
+        .secure-overlay-container {
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        /* Efek Blur & Kunci untuk Menjaga Privasi Data */
+        .form-locked {
+            filter: blur(5px);
+            opacity: 0.35;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Pesan Peringatan Keamanan di Tengah Form */
+        .lock-warning-message {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px dashed #ef4444;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: #b91c1c;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Visual indicator for invalid required fields */
+        .invalid {
+            border: 2px solid #ef4444 !important;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.12);
+            background: #fff6f6;
+        }
+    </style>
+</head>
+<body style="background: transparent;">
+
+    <div class="content-body" style="padding: 30px;">
+        
+        <div class="card" style="margin-bottom: 20px; border-left: 4px solid #ec4899;">
+            <p style="font-size: 12px; color: #64748b; margin-top: 0; margin-bottom: 8px;">
+                <span style="color: #ec4899;">Sistem Otentikasi Berkas:</span> Pilih pasien aktif untuk melakukan klasifikasi penyakit klinis.
+            </p>
+            <label style="font-weight: 600; font-size: 13px; color: #1e293b; display: block; margin-bottom: 8px;">Pilih Pasien Aktif Klasifikasi :</label>
+            <select id="selectPasienKoding" onchange="handlePasienKodingChange()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Poppins', sans-serif; font-size: 13px; color: #334155;">
+                <option value="">-- Pilih Nomor RM Pasien --</option>
+            </select>
+        </div>
+
+        <div class="patient-banner" id="patientBanner" style="display: none; margin-bottom: 20px;">
+            📋 <strong>Pasien Aktif Workstation:</strong> 
+            <span id="bannerNama">-</span> | 
+            No. RM: <span id="bannerRM">-</span> | 
+            Unit/Poli: <span id="bannerPoli">-</span>
+        </div>
+
+        <div id="secureWrapper" class="secure-overlay-container">
+            
+            <div id="lockMessage" class="lock-warning-message">
+                🔒 Formulir Terkunci Keamanan (Pilih Pasien Terlebih Dahulu)
+            </div>
+
+            <form onsubmit="simpanPemeriksaanKlinis(event)" id="mainForm">
+                <div id="formContents" style="display: none;">
+                    <div class="card">
+                        <h3>I. Pemeriksaan Fisik & Tanda-Tanda Vital (TTV)</h3>
+                            <p style="font-size: 11px; color: #64748b; margin-top: -15px; margin-bottom: 6px;">
+                                Sesuai standar variabel KMK No. 1423/2022: Nilai Tekanan Darah dipisahkan secara numerik struktural.
+                            </p>
+                            <p style="font-size:12px; color:#b91c1c; margin-top:4px; margin-bottom: 16px;">Field bertanda <span style="color:#ef4444; font-weight:700;">*</span> wajib diisi.</p>
+                        
+                        <div class="ttv-grid">
+                        <div class="ttv-card">
+                            <label>Tekanan Darah (Sistol / Diastol) <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input" style="background: transparent; border: none; padding: 0;">
+                                <div class="bp-split-container">
+                                    <input type="number" id="ttvSistol" placeholder="120" min="50" max="250" required disabled>
+                                    <span class="bp-separator">/</span>
+                                    <input type="number" id="ttvDiastol" placeholder="80" min="30" max="150" required disabled>
+                                    <span style="font-size: 11px; color: #64748b; margin-left: 4px;">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ttv-card">
+                            <label>Denyut Nadi (HR) <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input">
+                                <input type="number" id="ttvNadi" placeholder="80" required disabled>
+                                <span>x/mnt</span>
+                            </div>
+                        </div>
+                        <div class="ttv-card">
+                            <label>Pernapasan (RR) <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input">
+                                <input type="number" id="ttvRR" placeholder="20" required disabled>
+                                <span>x/mnt</span>
+                            </div>
+                        </div>
+                        <div class="ttv-card">
+                            <label>Suhu Tubuh <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input">
+                                <input type="text" id="ttvSuhu" placeholder="36.5" required disabled>
+                                <span>°C</span>
+                            </div>
+                        </div>
+                        <div class="ttv-card">
+                            <label>Berat Badan <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input">
+                                <input type="number" id="ttvBB" placeholder="65" required disabled>
+                                <span>kg</span>
+                            </div>
+                        </div>
+                        <div class="ttv-card">
+                            <label>Tinggi Badan <span style="color:#ef4444;">*</span></label>
+                            <div class="ttv-input">
+                                <input type="number" id="ttvTB" placeholder="165" required disabled>
+                                <span>cm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>II. Catatan Perkembangan Pasien Terintegrasi (CPPT - SOAP)</h3>
+                        <p style="font-size:12px; color:#b91c1c; margin-top:4px; margin-bottom: 12px;">Field bertanda <span style="color:#ef4444; font-weight:700;">*</span> wajib diisi.</p>
+
+                        <div class="soap-field">
+                            <label><span class="soap-badge" style="background:#0284c7;">S</span> Subjektif (Keluhan Utama & Riwayat Penyakit) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="soapS" placeholder="Keluhan Utama..." required disabled></textarea>
+                        </div>
+
+                    <div class="soap-field">
+                        <label><span class="soap-badge" style="background:#f59e0b;">O</span> Objektif (Pemeriksaan Objektif / Status Lokalis) <span style="color:#ef4444;">*</span></label>
+                        <textarea id="soapO" placeholder="Pemeriksaan Fisik..." required disabled></textarea>
+                    </div>
+
+                    <div class="soap-field">
+                        <label><span class="soap-badge" style="background:#ec4899;">A</span> Asesmen (Diagnosis Kerja / Diagnosis Banding) <span style="color:#ef4444;">*</span></label>
+                        <textarea id="soapA" placeholder="Diagnosis..." required disabled></textarea>
+                    </div>
+
+                    <div class="soap-field">
+                        <label><span class="soap-badge" style="background:#10b981;">P</span> Plan (Rencana Terapi, Edukasi & Penatalaksanaan) <span style="color:#ef4444;">*</span></label>
+                        <textarea id="soapP" placeholder="Rencana Terapi..." required disabled></textarea>
+                    </div>
+                </div>
+
+                <div style="text-align: right; margin-bottom: 30px;">
+                    <button type="submit" id="btnSimpan" class="btn-next-step" style="padding: 14px 40px; font-size: 14px;" disabled>💾 Simpan Rekam Medis Klinis & Lanjut ke Kode ICD-10</button>
+                </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Masukkan URL Google Apps Script Anda di sini
+        // Design mode: disable external Google Apps Script integration
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4COJJ2zCbCq2mu7c3jcEABRC1_VFEq86C3AHbVi86QVxzIcBNl-BnbmxygIlolpPu/exec"; 
+
+        window.onload = function() {
+            lockFormulir();
+            muatDropdownPasienDariDatabase();
+            cekAksesLangsungDariAntrean();
+        };
+
+        function lockFormulir() {
+            document.getElementById("mainForm").classList.add("form-locked");
+            document.getElementById("lockMessage").style.display = "flex";
+            document.getElementById("patientBanner").style.display = "none";
+            document.getElementById("formContents").style.display = "none";
+            setFieldsDisabled(true);
+        }
+
+        function unlockFormulir() {
+            document.getElementById("mainForm").classList.remove("form-locked");
+            document.getElementById("lockMessage").style.display = "none";
+            document.getElementById("patientBanner").style.display = "block";
+            document.getElementById("formContents").style.display = "block";
+            setFieldsDisabled(false);
+            // Remove invalid highlight on user input
+            const inputs = document.getElementById("mainForm").querySelectorAll("input, textarea");
+            inputs.forEach(input => {
+                input.addEventListener('input', () => input.classList.remove('invalid'));
+            });
+        }
+
+        function setFieldsDisabled(status) {
+            const inputs = document.getElementById("mainForm").querySelectorAll("input, textarea, button");
+            inputs.forEach(input => {
+                input.disabled = status;
+            });
+        }
+
+        function pad(num, size){ return String(num).padStart(size,'0'); }
+        function formatDateTime(d){ const y=d.getFullYear(), m=pad(d.getMonth()+1,2), day=pad(d.getDate(),2), hh=pad(d.getHours(),2), mm=pad(d.getMinutes(),2); return `${y}-${m}-${day} ${hh}:${mm}`; }
+
+        function muatDropdownPasienDariDatabase(){
+            const select = document.getElementById('selectPasienKoding');
+            select.innerHTML = '<option value="">-- Pilih Nomor RM Pasien --</option>';
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            let ada = false;
+            daftar.forEach((p, idx) => {
+                ada = true;
+                const statusLabel = p.status ? p.status : 'Terdaftar';
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.text = `${p.rm} - ${p.nama.toUpperCase()} (${statusLabel})`;
+                select.add(opt);
+            });
+            if (!ada) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.text = 'Belum ada pasien terdaftar atau tersimpan.';
+                opt.disabled = true;
+                select.add(opt);
+            }
+        }
+
+        // daftar pasien terdaftar table removed per user preference; selection now via dropdown only
+
+        function cekAksesLangsungDariAntrean(){
+            const direct = sessionStorage.getItem('directAccessPatient');
+            const index = sessionStorage.getItem('indexPasienAktif');
+            if (direct === 'pasienAntreanDinamis' && index !== null && index !== '') {
+                const select = document.getElementById('selectPasienKoding');
+                select.value = index;
+                handlePasienKodingChange();
+                sessionStorage.removeItem('directAccessPatient');
+            } else {
+                // Hapus sesi pasien aktif sebelumnya saat membuka manual modul
+                sessionStorage.removeItem('indexPasienAktif');
+            }
+        }
+
+        // Draft autosave per pasien (key berdasarkan RM)
+        const KLINIS_DRAFT_PREFIX = 'klinisDraft_';
+
+        function klinisDraftKey(rm) { return KLINIS_DRAFT_PREFIX + rm; }
+
+        function saveKlinisDraftFor(rm) {
+            try {
+                const draft = {
+                    soapS: document.getElementById('soapS').value,
+                    soapO: document.getElementById('soapO').value,
+                    soapA: document.getElementById('soapA').value,
+                    soapP: document.getElementById('soapP').value,
+                    ttvSistol: document.getElementById('ttvSistol').value,
+                    ttvDiastol: document.getElementById('ttvDiastol').value,
+                    ttvNadi: document.getElementById('ttvNadi').value,
+                    ttvRR: document.getElementById('ttvRR').value,
+                    ttvSuhu: document.getElementById('ttvSuhu').value,
+                    ttvBB: document.getElementById('ttvBB').value,
+                    ttvTB: document.getElementById('ttvTB').value,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(klinisDraftKey(rm), JSON.stringify(draft));
+            } catch(e){ console.error('saveKlinisDraftFor', e); }
+        }
+
+        function loadKlinisDraftFor(rm) {
+            try {
+                const raw = localStorage.getItem(klinisDraftKey(rm));
+                if (!raw) return;
+                const d = JSON.parse(raw);
+                if (!d) return;
+                if (d.soapS) document.getElementById('soapS').value = d.soapS;
+                if (d.soapO) document.getElementById('soapO').value = d.soapO;
+                if (d.soapA) document.getElementById('soapA').value = d.soapA;
+                if (d.soapP) document.getElementById('soapP').value = d.soapP;
+                if (d.ttvSistol) document.getElementById('ttvSistol').value = d.ttvSistol;
+                if (d.ttvDiastol) document.getElementById('ttvDiastol').value = d.ttvDiastol;
+                if (d.ttvNadi) document.getElementById('ttvNadi').value = d.ttvNadi;
+                if (d.ttvRR) document.getElementById('ttvRR').value = d.ttvRR;
+                if (d.ttvSuhu) document.getElementById('ttvSuhu').value = d.ttvSuhu;
+                if (d.ttvBB) document.getElementById('ttvBB').value = d.ttvBB;
+                if (d.ttvTB) document.getElementById('ttvTB').value = d.ttvTB;
+            } catch(e){ console.error('loadKlinisDraftFor', e); }
+        }
+
+        function attachKlinisAutoSave(rm) {
+            const ids = ['soapS','soapO','soapA','soapP','ttvSistol','ttvDiastol','ttvNadi','ttvRR','ttvSuhu','ttvBB','ttvTB'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener(el.tagName === 'TEXTAREA' ? 'input' : 'input', function(){ saveKlinisDraftFor(rm); });
+            });
+        }
+
+        function handlePasienKodingChange() {
+            const selection = document.getElementById("selectPasienKoding").value;
+            if (selection === "") { lockFormulir(); return; }
+
+            const idx = parseInt(selection,10);
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const pasien = daftar[idx];
+            if (!pasien) { alert('Data pasien tidak ditemukan.'); return; }
+
+            unlockFormulir();
+
+            document.getElementById("bannerNama").innerText = pasien.nama;
+            document.getElementById("bannerRM").innerText = pasien.rm;
+            document.getElementById("bannerPoli").innerText = 'Klinik ' + pasien.poli;
+
+            document.getElementById("soapS").value = pasien.soapS || '';
+            document.getElementById("soapO").value = pasien.soapO || '';
+            document.getElementById("soapA").value = pasien.diagnosaKlinis || '';
+            document.getElementById("soapP").value = pasien.prosedurKlinis || '';
+
+            document.getElementById('ttvSistol').value = pasien.ttv && pasien.ttv.td ? pasien.ttv.td.split('/')[0] : '';
+            document.getElementById('ttvDiastol').value = pasien.ttv && pasien.ttv.td ? pasien.ttv.td.split('/')[1] : '';
+            document.getElementById('ttvNadi').value = pasien.ttv && pasien.ttv.nadi ? pasien.ttv.nadi : '';
+            document.getElementById('ttvRR').value = pasien.ttv && pasien.ttv.rr ? pasien.ttv.rr : '';
+            document.getElementById('ttvSuhu').value = pasien.ttv && pasien.ttv.suhu ? pasien.ttv.suhu : '';
+            document.getElementById('ttvBB').value = pasien.ttv && pasien.ttv.bb ? pasien.ttv.bb : '';
+            document.getElementById('ttvTB').value = pasien.ttv && pasien.ttv.tb ? pasien.ttv.tb : '';
+
+            sessionStorage.setItem('indexPasienAktif', idx);
+            // load any klinis draft for this patient's RM and attach autosave
+            if (pasien && pasien.rm) {
+                loadKlinisDraftFor(pasien.rm);
+                attachKlinisAutoSave(pasien.rm);
+            }
+        }
+
+    async function simpanPemeriksaanKlinis(event) {
+    event.preventDefault();
+
+    const select = document.getElementById("selectPasienKoding");
+    const idx = parseInt(select.value, 10);
+    const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+    const pasien = daftar[idx];
+
+    if (!pasien) {
+        alert("Data pasien tidak ditemukan!");
+        return;
+    }
+
+    const ttvData = {
+        td: `${document.getElementById('ttvSistol').value}/${document.getElementById('ttvDiastol').value}`,
+        nadi: document.getElementById('ttvNadi').value,
+        rr: document.getElementById('ttvRR').value,
+        suhu: document.getElementById('ttvSuhu').value,
+        bb: document.getElementById('ttvBB').value,
+        tb: document.getElementById('ttvTB').value
+    };
+
+    const payload = {
+        formType: 'klinis',
+        rm: pasien.rm,
+        nama: pasien.nama,
+        ttv: ttvData,
+        soapS: document.getElementById('soapS').value,
+        soapO: document.getElementById('soapO').value,
+        soapA: document.getElementById('soapA').value,
+        soapP: document.getElementById('soapP').value,
+        waktuSimpan: new Date().toLocaleString()
+    };
+
+    pasien.ttv = ttvData;
+    pasien.soapS = payload.soapS;
+    pasien.soapO = payload.soapO;
+    pasien.soapA = payload.soapA;
+    pasien.soapP = payload.soapP;
+    pasien.diagnosaKlinis = payload.soapA;
+    pasien.prosedurKlinis = payload.soapP;
+    pasien.waktuKlinis = payload.waktuSimpan;
+
+    daftar[idx] = pasien;
+    localStorage.setItem('antreanSIMRS', JSON.stringify(daftar));
+    localStorage.setItem('currentPatient', JSON.stringify(pasien));
+
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+        });
+
+        alert('Data Klinis berhasil disimpan ke Spreadsheet!');
+        try { localStorage.removeItem(klinisDraftKey(pasien.rm)); } catch(e) {}
+        window.location.href = '4_koding_icd10.html';
+    } catch (err) {
+        console.error('Gagal kirim:', err);
+        alert('Error detail: ' + err.message + '\nSilakan cek Console (F12)');
+    }
+}
+    </script>
+</body>
+</html>

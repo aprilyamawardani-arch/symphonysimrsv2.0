@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Symphony SIMRS v2.0 - Kodifikasi ICD-10</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS FITUR KEAMANAN / BLUR FORMULIR */
+        .secure-overlay-container {
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .form-locked {
+            filter: blur(5px);
+            opacity: 0.35;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .lock-warning-message {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px dashed #ef4444;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: #b91c1c;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-miscoding {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body style="background: transparent;">
+
+    <div class="content-body" style="padding: 30px;">
+        
+        <div class="card" style="margin-bottom: 20px; border-left: 4px solid #ec4899;">
+            <p style="font-size: 12px; color: #64748b; margin-top: 0; margin-bottom: 8px;">
+                <span style="color: #ec4899;">Sistem Otentikasi Berkas:</span> Pilih pasien aktif untuk melakukan klasifikasi penyakit klinis.
+            </p>
+            <label style="font-weight: 600; font-size: 13px; color: #1e293b; display: block; margin-bottom: 8px;">Pilih Pasien Aktif Klasifikasi :</label>
+            <select id="selectPasienKoding" onchange="handlePasienKodingChange()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Poppins', sans-serif; font-size: 13px; color: #334155;">
+                <option value="">-- Pilih Nomor RM Pasien --</option>
+            </select>
+        </div>
+    
+        <div class="patient-banner" id="kodingSummary" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; margin-bottom: 20px;">
+            Pasien Aktif: <span id="kodingNama">-</span> | RM <span id="kodingRM">-</span> | Poli <span id="kodingPoli">-</span>
+        </div>
+
+        <div class="patient-banner" id="kodingBanner" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; margin-bottom: 20px;">
+            Resume Klinis SOAP Dokter: <span id="textAsesmenDokter" style="font-style: italic; color: #0284c7;">Memuat catatan...</span>
+        </div>
+
+        <div id="secureWrapperKoding" class="secure-overlay-container">
+            <div id="lockMessageKoding" class="lock-warning-message">
+                Formulir Terkunci Keamanan (Pilih Pasien Terlebih Dahulu)
+            </div>
+    
+            <div class="card">
+                <h3>Klasifikasi Komponen Morbiditas Visceral & Kardiovaskular</h3>
+                <p style="font-size: 11px; color: #64748b; margin-top: -15px; margin-bottom: 25px;">
+                    Sesuai dengan pedoman ICD-10 Volume 1 dan 3 untuk penentuan klaim JKN BPJS Kesehatan.
+                </p>
+
+                <form onsubmit="validasiDanSimpanKoding(event)">
+                    <div class="form-group">
+                        <label>Diagnosis Primer</label>
+                        <select id="selectDiagnosisPrimer" required disabled style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Poppins', sans-serif; font-size: 13px; color: #334155;">
+                            <option value="">-- Pilih Diagnosis Primer --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Diagnosis Sekunder</label>
+                        <select id="selectDiagnosisSekunder" required disabled style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Poppins', sans-serif; font-size: 13px; color: #334155;">
+                            <option value="">-- Pilih Diagnosis Sekunder --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Deskripsi Standar Kode Internasional</label>
+                        <input type="text" id="inputDeskripsiICD" placeholder="Otomatis terisi dari pilihan Diagnosis Primer" readonly style="background: #f1f5f9; color: #475569;" disabled>
+                    </div>
+
+                    <div id="miscodingAlert" class="alert-miscoding">
+                        Peringatan Audit Klausul Miscoding! Kode ICD-10 yang Anda masukkan tidak sesuai/kontradiktif dengan asesmen klinis poliklinik asal pasien. Harap lakukan re-evaluasi kode!
+                    </div>
+
+                    <div style="text-align: right; margin-top: 25px;">
+                        <button type="submit" id="btnSimpanKoding" class="btn-next-step" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); padding: 13px 35px;" disabled>Validasi & Teruskan ke Biostatistik</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4COJJ2zCbCq2mu7c3jcEABRC1_VFEq86C3AHbVi86QVxzIcBNl-BnbmxygIlolpPu/exec";
+
+        window.onload = function() {
+            muatDropdownPasienKoding();
+            renderDiagnosisOptions();
+
+            const primerSelect = document.getElementById('selectDiagnosisPrimer');
+            const sekunderSelect = document.getElementById('selectDiagnosisSekunder');
+
+            const saveDraft = function() {
+                const valPasien = document.getElementById('selectPasienKoding').value;
+                const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+                const pasien = daftar[parseInt(valPasien, 10)];
+                if (!pasien) return;
+
+                try {
+                    const key = 'kodingDraft_' + pasien.rm;
+                    const draft = {
+                        primer: primerSelect.value,
+                        sekunder: sekunderSelect.value,
+                        desc: document.getElementById('inputDeskripsiICD').value,
+                        savedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem(key, JSON.stringify(draft));
+                } catch(err) {
+                    console.error('save koding draft', err);
+                }
+            };
+
+            primerSelect.addEventListener('change', function() {
+                updateDeskripsiICD();
+                validateDiagnosisPriority();
+                saveDraft();
+            });
+
+            sekunderSelect.addEventListener('change', function() {
+                validateDiagnosisPriority();
+                saveDraft();
+            });
+
+            const idxAktif = sessionStorage.getItem('indexPasienAktif');
+            const direct = sessionStorage.getItem('directAccessPatient');
+
+            if (direct === 'pasienAntreanDinamis' && idxAktif !== null) {
+                document.getElementById('selectPasienKoding').value = idxAktif;
+                unlockFormKoding();
+                loadDataPasienKoding(idxAktif);
+                sessionStorage.removeItem('directAccessPatient');
+            } else {
+                lockFormKoding();
+            }
+        };
+
+        function lockFormKoding() {
+            document.getElementById("secureWrapperKoding").classList.add("form-locked");
+            document.getElementById("lockMessageKoding").style.display = "flex";
+            document.getElementById("kodingBanner").style.display = "none";
+            document.getElementById("kodingSummary").style.display = "none";
+            setFieldsKodingDisabled(true);
+        }
+
+        function unlockFormKoding() {
+            document.getElementById("secureWrapperKoding").classList.remove("form-locked");
+            document.getElementById("lockMessageKoding").style.display = "none";
+            document.getElementById("kodingBanner").style.display = "block";
+            document.getElementById("kodingSummary").style.display = "block";
+            setFieldsKodingDisabled(false);
+        }
+
+        function setFieldsKodingDisabled(status) {
+            const elements = document.getElementById("secureWrapperKoding").querySelectorAll("input, select, button");
+            elements.forEach(el => {
+                el.disabled = status;
+            });
+        }
+
+        const diagnosisOptions = [
+            { value: 'A01.0', label: 'A01.0 Typhoid fever' },
+            { value: 'A15.0', label: 'A15.0 Tuberculosis of lung, confirmed by sputum microscopy with or without culture' },
+            { value: 'B01.0', label: 'B01.0 Varicella Meningitis' },
+            { value: 'A91', label: 'A91 Dengeu haemorrhagic fevers' },
+            { value: 'B20.0', label: 'B20.0 HIV disease resulting in mycobacterial infection' },
+            { value: 'J17.8', label: 'J17.8* Pneumonia in bacterial diseases classified elsewhere' }
+        ];
+
+        function pad(n, s) {
+            return String(n).padStart(s, '0');
+        }
+
+        function formatDateTime(d) {
+            const y = d.getFullYear();
+            const m = pad(d.getMonth() + 1, 2);
+            const day = pad(d.getDate(), 2);
+            const hh = pad(d.getHours(), 2);
+            const mm = pad(d.getMinutes(), 2);
+            return `${y}-${m}-${day} ${hh}:${mm}`;
+        }
+
+        function muatDropdownPasienKoding() {
+            const select = document.getElementById('selectPasienKoding');
+            select.innerHTML = '<option value="">-- Pilih Nomor RM Pasien --</option>';
+
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            let ada = false;
+
+            daftar.forEach((p, idx) => {
+                ada = true;
+                const statusLabel = p.status ? p.status : 'Terdaftar';
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.text = `${p.rm} - ${p.nama.toUpperCase()} (${statusLabel})`;
+                select.add(opt);
+            });
+
+            if (!ada) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.text = 'Belum ada pasien terdaftar atau tersimpan.';
+                opt.disabled = true;
+                select.add(opt);
+            }
+        }
+
+        function renderDiagnosisOptions() {
+            const primer = document.getElementById('selectDiagnosisPrimer');
+            const sekunder = document.getElementById('selectDiagnosisSekunder');
+
+            diagnosisOptions.forEach(item => {
+                const optionPrimer = document.createElement('option');
+                optionPrimer.value = item.value;
+                optionPrimer.text = item.label;
+                primer.add(optionPrimer);
+
+                const optionSekunder = document.createElement('option');
+                optionSekunder.value = item.value;
+                optionSekunder.text = item.label;
+                sekunder.add(optionSekunder);
+            });
+        }
+
+        function updateDeskripsiICD() {
+            const primer = document.getElementById('selectDiagnosisPrimer').value;
+            const description = diagnosisOptions.find(item => item.value === primer)?.label || '';
+            document.getElementById('inputDeskripsiICD').value = description;
+        }
+
+        function setMiscodingMessage(message) {
+            const alert = document.getElementById('miscodingAlert');
+
+            if (!message) {
+                alert.style.display = 'none';
+                return;
+            }
+
+            alert.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function validateDiagnosisPriority() {
+            const primer = document.getElementById('selectDiagnosisPrimer').value;
+            const sekunder = document.getElementById('selectDiagnosisSekunder').value;
+            const acuteCodes = ['A01.0', 'A15.0', 'B01.0', 'J17.8'];
+
+            if (primer === 'J17.8') {
+                setMiscodingMessage('Error: J17.8 bukan diagnosis primer. Pilih kode ini hanya sebagai Diagnosis Sekunder.');
+                return false;
+            }
+
+            if (primer === 'B20.0' && acuteCodes.includes(sekunder)) {
+                setMiscodingMessage('Audit Miscoding: Urutan prioritas keliru. Kondisi kronis HIV tidak boleh mendahului kondisi akut/infeksi sekunder. Revisi susunan kode.');
+                return false;
+            }
+
+            setMiscodingMessage('');
+            return true;
+        }
+
+        function loadDataPasienKoding(val) {
+            const idx = parseInt(val, 10);
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const pasien = daftar[idx];
+
+            if (!pasien) return;
+
+            const primerSelect = document.getElementById('selectDiagnosisPrimer');
+            const sekunderSelect = document.getElementById('selectDiagnosisSekunder');
+            const descICD = document.getElementById('inputDeskripsiICD');
+            const bannerText = document.getElementById('textAsesmenDokter');
+
+            document.getElementById('kodingNama').innerText = pasien.nama || '-';
+            document.getElementById('kodingRM').innerText = pasien.rm || '-';
+            document.getElementById('kodingPoli').innerText = pasien.poli || '-';
+
+            bannerText.innerText = pasien.diagnosaKlinis ? ('Asesmen Dokter: ' + pasien.diagnosaKlinis) : 'Asesmen Dokter: -';
+
+            primerSelect.value = pasien.kodePrimer || '';
+            sekunderSelect.value = pasien.kodeSekunder || '';
+            updateDeskripsiICD();
+            descICD.value = document.getElementById('inputDeskripsiICD').value;
+
+            try {
+                const key = 'kodingDraft_' + pasien.rm;
+                const raw = localStorage.getItem(key);
+
+                if (raw) {
+                    const d = JSON.parse(raw);
+                    if (d && d.primer) primerSelect.value = d.primer;
+                    if (d && d.sekunder) sekunderSelect.value = d.sekunder;
+                    updateDeskripsiICD();
+                }
+            } catch(e) {
+                console.error('load koding draft', e);
+            }
+        }
+
+        function handlePasienKodingChange() {
+            const val = document.getElementById('selectPasienKoding').value;
+            setMiscodingMessage('');
+
+            if (val === '') {
+                lockFormKoding();
+                sessionStorage.removeItem('indexPasienAktif');
+                return;
+            }
+
+            unlockFormKoding();
+            loadDataPasienKoding(val);
+            sessionStorage.setItem('indexPasienAktif', val);
+            sessionStorage.setItem('directAccessPatient', 'pasienAntreanDinamis');
+        }
+
+        async function validasiDanSimpanKoding(e) {
+            e.preventDefault();
+
+            const valPasien = document.getElementById('selectPasienKoding').value;
+
+            if (!valPasien) {
+                alert('Pilih pasien terlebih dahulu.');
+                return;
+            }
+
+            const idx = parseInt(valPasien, 10);
+            const primer = document.getElementById('selectDiagnosisPrimer').value;
+            const sekunder = document.getElementById('selectDiagnosisSekunder').value;
+
+            if (!primer || !sekunder) {
+                alert('Pilih Diagnosis Primer dan Diagnosis Sekunder terlebih dahulu.');
+                return;
+            }
+
+            if (!validateDiagnosisPriority()) {
+                return;
+            }
+
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+            const pasien = daftar[idx];
+
+            if (!pasien) {
+                alert('Data pasien tidak ditemukan.');
+                return;
+            }
+
+            pasien.kodePrimer = primer;
+            pasien.kodeSekunder = sekunder;
+            pasien.kodeICD10 = primer;
+            pasien.deskripsiICD = document.getElementById('inputDeskripsiICD').value;
+            pasien.statusKoding = 'Selesai';
+            pasien.waktuKoding = formatDateTime(new Date());
+
+            daftar[idx] = pasien;
+            localStorage.setItem('antreanSIMRS', JSON.stringify(daftar));
+            localStorage.setItem('currentPatient', JSON.stringify(pasien));
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        formType: 'koding_icd10',
+                        rm: pasien.rm,
+                        nama: pasien.nama,
+                        kodePrimer: pasien.kodePrimer,
+                        kodeSekunder: pasien.kodeSekunder,
+                        kodeICD10: pasien.kodeICD10,
+                        deskripsiICD: pasien.deskripsiICD,
+                        statusKoding: pasien.statusKoding,
+                        waktuKoding: pasien.waktuKoding,
+                        user: localStorage.getItem('sessionUser') || 'unknown'
+                    })
+                });
+            } catch (err) {
+                console.error('Gagal kirim koding ICD-10 ke spreadsheet:', err);
+                alert('Data tersimpan di browser, tetapi gagal dikirim ke Spreadsheet: ' + err.message);
+                return;
+            }
+
+            try {
+                const currentUser = localStorage.getItem('sessionUser') || 'unknown';
+                const auditEntry = {
+                    user: currentUser,
+                    action: `Menyimpan kode ICD-10 untuk pasien: ${pasien.nama} (RM ${pasien.rm}) - Primer ${primer}, Sekunder ${sekunder}`,
+                    system: 'ICD-10'
+                };
+
+                if (window.parent && window.parent.addAuditEntry) {
+                    window.parent.addAuditEntry(auditEntry);
+                } else {
+                    const auditList = JSON.parse(localStorage.getItem('auditTrail')) || [];
+                    auditList.push({
+                        timestamp: new Date().toISOString(),
+                        ...auditEntry
+                    });
+                    localStorage.setItem('auditTrail', JSON.stringify(auditList));
+                }
+            } catch (err) {
+                console.error('audit icd10 error', err);
+            }
+
+            try {
+                localStorage.removeItem('kodingDraft_' + pasien.rm);
+            } catch(e) {}
+
+            alert('Kode ICD-10 berhasil disimpan. Lanjut ke Biostatistik.');
+
+            try {
+                window.parent.postMessage({ action: 'dataUpdated' }, '*');
+            } catch(e) {}
+
+            muatDropdownPasienKoding();
+            window.parent.postMessage({ action: 'navigate', url: '5_biostatistik.html' }, '*');
+            window.location.href = '5_biostatistik.html';
+        }
+    </script>
+</body>
+</html>

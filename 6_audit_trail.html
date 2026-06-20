@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Symphony SIMRS v2.0 - Audit Trail & Pelacakan Berkas</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .btn-print-table {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .btn-alih-media {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        /* --- STYLE PRINT RESUME MEDIS --- */
+        @media print {
+            body * { visibility: hidden; }
+            #printableResumeArea, #printableResumeArea * { visibility: visible; }
+            #printableResumeArea { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+        .resume-template { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 40px; margin-top: 25px; color: #1e293b; }
+        .kop-surat { display: flex; align-items: center; gap: 20px; border-bottom: 3px double #334155; padding-bottom: 15px; margin-bottom: 25px; }
+        .grid-resume { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; }
+        .resume-section-title { background: #f1f5f9; padding: 6px 12px; font-weight: 700; font-size: 13px; text-transform: uppercase; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid #0f172a; }
+    </style>
+</head>
+<body style="background: transparent;">
+
+    <div class="content-body" style="padding: 30px;">
+        
+        <!-- BAGIAN 1: AUDIT LOG -->
+        <div class="card no-print">
+            <h3>Sistem Riwayat Audit Trail Log Pengguna</h3>
+            <table>
+                <thead>
+                    <tr><th>Waktu Aktivitas</th><th>ID Pengguna</th><th>Aksi Operasional</th><th>Sistem Enkripsi</th></tr>
+                </thead>
+                <tbody id="auditTrailBody"></tbody>
+            </table>
+        </div>
+
+        <!-- BAGIAN 2: TABEL PELACAKAN STATUS BERKAS PER PASIEN -->
+        <div class="card no-print">
+            <h3>Pelacakan Berkas Transisional Berbasis Identitas Pasien</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. RM</th>
+                        <th>Nama Pasien</th>
+                        <th>Bentuk Format Berkas</th>
+                        <th>Lokasi Penyimpanan / Status Database</th>
+                        <th style="text-align: center;">Aksi Sistem</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelPelacakanPasien">
+                    <!-- Rows will be generated dynamically from antreanSIMRS (no dummy data) -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ===================================================================
+             BAGIAN 3: TEMPLATE INVISIBLE RESUME UNTUK PRINT PDF
+             =================================================================== -->
+        <div id="printableResumeArea" class="resume-template" style="display: none;">
+            <div class="kop-surat">
+                <img src="logoesgul.png" alt="Logo" style="height: 55px; width: auto;">
+                <div style="font-family: 'Poppins';">
+                    <h1 style="font-size: 18px; margin: 0;">RUMAH SAKIT PENDIDIKAN UNIVERSITAS ESA UNGGUL</h1>
+                    <p style="font-size: 11px; margin: 0;">Jl. Arjuna Utara No.9, Kebon Jeruk, Kota Jakarta Barat</p>
+                </div>
+            </div>
+            <h2 style="text-align: center; font-size: 14px; text-decoration: underline; margin-bottom: 20px;">RINGKASAN RESUME MEDIS ELEKTRONIK</h2>
+            <div class="resume-section-title">I. Identitas Pasien</div>
+            <div class="grid-resume">
+                <div>
+                    <p><strong>No. RM:</strong> <span id="pRM"></span></p>
+                    <p><strong>Nama:</strong> <span id="pNama"></span></p>
+                </div>
+                <div>
+                    <p><strong>Umur/JK:</strong> <span id="pUsia"></span></p>
+                    <p><strong>Poliklinik:</strong> <span id="pPoli"></span></p>
+                </div>
+            </div>
+            <div class="resume-section-title">II. Diagnosis & Kode Klasifikasi Penyakit</div>
+            <p style="font-size: 13px;"><strong>Diagnosis Kerja Utama:</strong> <span id="pDiagnosis">-</span></p>
+            <p style="font-size: 11px; margin-top: 50px; text-align: right;">Disahkan oleh: <strong>Symphony SIMRS Validator</strong></p>
+        </div>
+
+    </div>
+
+    <script>
+    window.onload = function() {
+        renderAuditLog();
+        renderPelacakanPasien();
+
+        const alihMediaRM = localStorage.getItem("alihMedia_RM");
+        const alihMediaNama = localStorage.getItem("alihMedia_Nama");
+
+        if(alihMediaRM) {
+            alert('Alih media berhasil: ' + alihMediaRM + ' → ' + alihMediaNama);
+            localStorage.removeItem("alihMedia_RM");
+            localStorage.removeItem("alihMedia_Nama");
+            renderPelacakanPasien();
+        }
+
+        window.addEventListener('storage', function(e){
+            if (e.key === 'antreanSIMRS' || e.key === 'auditTrail') {
+                renderPelacakanPasien();
+                renderAuditLog();
+            }
+        });
+
+        window.addEventListener('message', function(e){
+            if (e.data && e.data.action === 'dataUpdated') {
+                renderPelacakanPasien();
+                renderAuditLog();
+            }
+        });
+    };
+
+        function renderAuditLog() {
+            const tbody = document.getElementById('auditTrailBody');
+            tbody.innerHTML = '';
+            const auditList = JSON.parse(localStorage.getItem('auditTrail')) || [];
+            if (auditList.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="4" class="no-data">Belum ada aktivitas audit pengguna.</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+            auditList.slice().reverse().forEach(entry => {
+                const tr = document.createElement('tr');
+                const system = entry.system ? `<span class="badge-s">${entry.system}</span>` : `<span class="badge-s">SHA-256 VALID</span>`;
+                tr.innerHTML = `<td>${entry.timestamp || ''}</td><td>${entry.user || 'unknown'}</td><td>${entry.action || '-'}</td><td>${system}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Hapus semua audit trail entries
+        // Hapus semua data pasien (antrean dan related keys)
+        function clearAllPatientData(){
+            if (!confirm('Konfirmasi: Hapus semua data pasien (antrean, currentPatient, diagnosaKlinis)?')) return;
+            try {
+                // preserve auditTrail if present
+                const audit = localStorage.getItem('auditTrail');
+                localStorage.removeItem('antreanSIMRS');
+                localStorage.removeItem('currentPatient');
+                localStorage.removeItem('diagnosaKlinis');
+                localStorage.removeItem('alihMedia_RM');
+                localStorage.removeItem('alihMedia_Nama');
+                localStorage.removeItem('temp_AlihRM');
+                localStorage.removeItem('temp_AlihNama');
+                if (audit) localStorage.setItem('auditTrail', audit);
+            } catch(e) {}
+            alert('Semua data pasien telah dihapus. Audit trail disimpan (jika ada).');
+            renderPelacakanPasien();
+        }
+
+        function renderPelacakanPasien() {
+            const tbody = document.getElementById("tabelPelacakanPasien");
+            tbody.innerHTML = '';
+            const daftar = JSON.parse(localStorage.getItem('antreanSIMRS')) || [];
+
+            if(daftar.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="no-data">Belum ada berkas pasien di sistem.</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            // Tampilkan urutan terbaru di atas
+            daftar.slice().reverse().forEach(p => {
+                const tr = document.createElement('tr');
+                const formatBadge = `<span class="badge-h" style="background:${p.status === 'Selesai Pelayanan' ? '#dcfce7' : '#fef3c7'}; color:${p.status === 'Selesai Pelayanan' ? '#165432' : '#92400e'};">${p.status === 'Selesai Pelayanan' ? 'ELEKTRONIK (RME)' : 'ANTREAN / SEMENTARA'}</span>`;
+                const lokasi = p.status === 'Selesai Pelayanan' ? 'Database Server Symphony' : 'Menunggu di Antrian';
+                const aksiBtn = p.status === 'Selesai Pelayanan' ? `<button class="btn-print-table" onclick="cetakSatuPasien('${p.rm}', '${p.nama.replace(/'/g, "\\'")}', '${p.nik||''}', '${p.usiaAngka||''} Tahun', '${p.jk||''}', '${p.penjamin||''}', '${(p.diagnosaKlinis||'').replace(/'/g, "\\'")}')">🖨️ Cetak Resume</button>` : `<button class="btn-alih-media" onclick="bukaAlihMedia('${p.rm}', '${p.nama.replace(/'/g, "\\'")}')">🔄 Alih Media</button>`;
+
+                tr.innerHTML = `<td>${p.rm}</td><td>${p.nama}</td><td>${formatBadge}</td><td>${lokasi}</td><td style="text-align:center;">${aksiBtn}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function bukaAlihMedia(rm, nama) {
+            // Lempar data ke halaman form alih media
+            localStorage.setItem("temp_AlihRM", rm);
+            localStorage.setItem("temp_AlihNama", nama);
+            window.location.href = "6_alih_media.html";
+        }
+
+        function cetakSatuPasien(rm, nama, nik, usia, jk, poli) {
+            document.getElementById("printableResumeArea").style.display = "block";
+            document.getElementById("pRM").innerText = rm;
+            document.getElementById("pNama").innerText = nama;
+            document.getElementById("pUsia").innerText = usia + " / " + jk;
+            document.getElementById("pPoli").innerText = "Klinik " + poli;
+            
+            setTimeout(() => {
+                window.print();
+                document.getElementById("printableResumeArea").style.display = "none";
+            }, 300);
+        }
+    </script>
+</body>
+</html>
